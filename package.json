@@ -8,7 +8,8 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node --test test/*.test.js",
+    "web": "npx --yes serve web -l 8080",
+    "test": "node --test test/*.test.js test/*.test.mjs",
     "dist": "electron-builder --win nsis portable",
     "dist:dir": "electron-builder --win dir"
   },

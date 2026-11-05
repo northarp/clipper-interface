@@ -1,68 +1,69 @@
 # Clipper
 
-A Windows desktop app for formatting clips into vertical **9:16 (1080×1920)** videos for
-**TikTok**, **Instagram Reels** and **YouTube Shorts**.
+Format clips into vertical **9:16 (1080×1920)** videos for **TikTok**, **Instagram Reels** and
+**YouTube Shorts**, right in your browser. Videos are processed on your own device and never uploaded.
 
-## Features
+## Using the website
 
-- **Three formats**
-  - **Video only**: the clip fills the frame. Choose *Fill* (crop), *Blur fit* (the whole clip over a blurred copy of itself) or *Bars* (black bars).
-  - **Clip + Video (half/half)**: your clip on one half, a background video (e.g. gameplay) on the other. The background loops if it's shorter than the clip, and its audio can be mixed in.
-  - **Clip + Image (half/half)**: your clip over one or **two images (max 2)**. Two images can sit *side by side* or *switch halfway* through the clip.
-- **Overlay**: attach a PNG, JPG, WebP or animated GIF, then:
-  - drag it anywhere in the preview (it snaps to the center lines; hold Alt to skip snapping)
-  - use the 3×3 position grid (top, center, bottom, corners…). Positions respect the platform's safe zones when they're shown.
-  - set its size (slider or mouse wheel), opacity, or exact X/Y position
-  - nudge it with the arrow keys (Shift = bigger steps), or press Delete to remove it
-- **Crop / reframe**: drag any clip, video or image in the preview to choose which part stays in frame. Double-click to re-center.
-- **Trim**: drag the handles on the timeline, or press **I** / **O** to set the start and end at the playhead.
-- **Platform presets**: show each platform's approximate UI safe zones and warn when a clip is longer than the platform allows (TikTok 10 min, Reels 3 min, Shorts 3 min).
-- **Split controls**: change the clip's share of the height (20–80%) or move the clip to the bottom.
-- **Export**: H.264/AAC MP4 at 30 fps, with a progress bar and cancel button. ffmpeg is bundled, so there's nothing else to install.
+Open the site, then follow the four steps on the left:
 
-What you see in the preview is what gets exported: the preview and the ffmpeg filter graph use the same crop and position maths.
+1. **Format**: pick one of:
+   - **Video**: just the clip. *Fill* crops it, *Blur* fits it over a blurred copy, *Bars* adds black bars.
+   - **Clip + video**: your clip on one half, a background video (e.g. gameplay) on the other. The background loops if it's shorter, and you can mix in its sound.
+   - **Clip + image**: your clip over one or **two images (max 2)**, shown *side by side* or *switching halfway*.
+2. **Media**: add your files (drop them or click). Drag inside the preview to choose which part of each video or image stays in frame. Double-click to re-center.
+3. **Overlay (optional)**: add a PNG, JPG, WebP or animated GIF. Drag it anywhere in the preview (it snaps to the center lines), use the quick-position grid, or change its size (slider or mouse wheel) and opacity. Arrow keys nudge it.
+4. **Export**: pick a quality and click **Export video**. You get an MP4 (H.264 video and AAC audio, 30 fps).
 
-## Keyboard shortcuts
+Trim with the handles on the timeline, or press **I** and **O** to set the start and end at the playhead.
+The **TikTok / Reels / Shorts** switch shows that app's safe zones (where its buttons cover your video)
+and warns if the clip is too long for it. The **Purple / Green** button switches the colourway.
 
-| Key | Action |
-| --- | --- |
-| Space | Play / pause |
-| I / O | Set trim start / end at playhead |
-| ← / → | Seek 1 s (Shift: 5 s), or nudge the selected overlay |
-| ↑ / ↓ | Nudge the selected overlay |
-| Delete | Remove the selected overlay |
+**Browser support:** exporting needs a browser with WebCodecs: a recent **Chrome or Edge** (recommended),
+or Firefox 130+, on a computer. Other browsers can still preview.
 
-## Development
+## Publishing the site (GitHub Pages)
 
-Requires Node.js 18+.
+The site is static files in `web/`, so no server or build step is needed.
+
+1. On GitHub, open **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Push any change to `web/` on the default branch, or run the **Deploy website** workflow from the **Actions** tab.
+
+The site then appears at `https://<owner>.github.io/<repo>/`. GitHub Pages for a private repository needs a paid GitHub plan.
+Any other static host (Netlify, Cloudflare Pages, Vercel…) works too: point it at the `web/` folder.
+
+## Running it locally
+
+The page uses JavaScript modules, so it has to be served over `http://`. Double-clicking `index.html` won't work.
+
+```bash
+npm run web
+```
+
+Then open http://localhost:8080. Any static file server pointed at `web/` works, for example
+`python -m http.server 8080 --directory web`.
+
+## How it works
+
+- `web/js/compose.js`: draws one frame (layout, crop, blur, overlay). Both the live preview and the exporter use it, so the preview matches the export exactly.
+- `web/js/export.js`: decodes the inputs and encodes the MP4 in the browser with [Mediabunny](https://mediabunny.dev) (WebCodecs). If the browser has no built-in AAC encoder, it loads Mediabunny's WebAssembly AAC encoder.
+- `web/js/app.js`: the UI, playback, dragging, timeline and theme.
+- `web/vendor/`: bundled copies of Mediabunny (MPL-2.0) and its AAC encoder (based on FFmpeg, LGPL-2.1). Licenses are in `web/vendor/licenses/`.
+
+## Desktop app (optional)
+
+The original Electron desktop app is still in `src/`. It uses a bundled ffmpeg and has the same features.
 
 ```bash
 npm install
-npm start      # run the app
-npm test       # unit tests + end-to-end renders of every layout with real ffmpeg
+npm start
 ```
 
-## Building the Windows installer
-
-Run these **on Windows**. `ffmpeg-static` downloads the ffmpeg binary for the OS you install on,
-so building on Linux or macOS would bundle the wrong ffmpeg.
+## Tests
 
 ```bash
-npm install
-npm run dist
+npm test
 ```
 
-This writes an NSIS installer and a portable `.exe` to `dist/`.
-
-To use a different ffmpeg build, set `CLIPPER_FFMPEG` to the path of an `ffmpeg.exe`.
-
-## Project layout
-
-```
-src/main/main.js        Electron main process: windows, dialogs, IPC
-src/main/preload.js     Safe bridge exposed to the UI as window.clipper
-src/main/build-args.js  Turns a project into ffmpeg arguments (pure and unit tested)
-src/main/ffmpeg.js      Finds ffmpeg, probes media, renders with progress and cancel
-src/renderer/           The UI (plain HTML/CSS/JS, no build step)
-test/                   node:test suites
-```
+This runs unit tests for the website's frame maths, plus the desktop app's ffmpeg tests (including real renders of every layout).

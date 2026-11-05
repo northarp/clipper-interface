@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" data-theme="green">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clipper</title>
+    <meta name="description" content="Format clips for TikTok, Instagram Reels and YouTube Shorts, right in your browser." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='9' y='2' width='14' height='28' rx='4' fill='%2386efac'/%3E%3Crect x='9' y='16' width='14' height='14' rx='4' fill='%23166534'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Apply the saved colourway before first paint.
+      try {
+        const t = localStorage.getItem('clipper.theme');
+        if (t === 'purple' || t === 'green') document.documentElement.dataset.theme = t;
+      } catch (_) {}
+    </script>
+    <script type="importmap">
+      { "imports": { "mediabunny": "./vendor/mediabunny.min.mjs" } }
+    </script>
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><span class="mark" aria-hidden="true"></span>Clipper</div>
+      <div class="seg platforms" id="platforms" role="radiogroup" aria-label="Platform">
+        <button data-platform="tiktok" role="radio">TikTok</button>
+        <button data-platform="reels" role="radio">Reels</button>
+        <button data-platform="shorts" role="radio">Shorts</button>
+      </div>
+      <button class="theme-btn" id="themeBtn" title="Switch colourway">
+        <span class="swatch" aria-hidden="true"></span><span id="themeLabel">Purple</span>
+      </button>
+    </header>
+
+    <div class="notice" id="notice" hidden></div>
+
+    <main class="app">
+      <section class="controls">
+        <div class="step">
+          <h2><span class="n">1</span>Format</h2>
+          <div class="tiles" id="layouts">
+            <button class="tile" data-layout="video">
+              <span class="mini"><i class="c"></i></span>Video
+            </button>
+            <button class="tile" data-layout="split-video">
+              <span class="mini"><i class="c"></i><i class="v"></i></span>Clip + video
+            </button>
+            <button class="tile" data-layout="split-image">
+              <span class="mini"><i class="c"></i><i class="i"></i></span>Clip + image
+            </button>
+          </div>
+        </div>
+
+        <div class="step">
+          <h2><span class="n">2</span>Media</h2>
+
+          <label class="drop" data-slot="clip">
+            <input type="file" accept="video/*,.mkv,.mov" hidden />
+            <span class="empty">Add your clip <small>drop or click</small></span>
+            <span class="filled"><span class="name"></span><button type="button" class="x" title="Remove">✕</button></span>
+          </label>
+
+          <div class="row" data-show="video">
+            <span class="label">Fit</span>
+            <div class="seg" id="fit">
+              <button data-fit="fill">Fill</button>
+              <button data-fit="blur">Blur</button>
+              <button data-fit="bars">Bars</button>
+            </div>
+          </div>
+
+          <div data-show="split-video" class="stack">
+            <label class="drop" data-slot="background">
+              <input type="file" accept="video/*,.mkv,.mov" hidden />
+              <span class="empty">Add a background video <small>drop or click</small></span>
+              <span class="filled"><span class="name"></span><button type="button" class="x" title="Remove">✕</button></span>
+            </label>
+            <div class="row">
+              <span class="label">Background sound</span>
+              <input type="range" id="bgVolume" min="0" max="100" value="0" />
+              <output for="bgVolume"></output>
+            </div>
+          </div>
+
+          <div data-show="split-image" class="stack">
+            <label class="drop" data-slot="image0">
+              <input type="file" accept="image/*" multiple hidden />
+              <span class="empty">Add an image <small>up to 2</small></span>
+              <span class="filled"><span class="name"></span><button type="button" class="x" title="Remove">✕</button></span>
+            </label>
+            <label class="drop" data-slot="image1">
+              <input type="file" accept="image/*" hidden />
+              <span class="empty">Second image <small>optional</small></span>
+              <span class="filled"><span class="name"></span><button type="button" class="x" title="Remove">✕</button></span>
+            </label>
+            <div class="row" id="arrangeRow">
+              <span class="label">2 images</span>
+              <div class="seg" id="arrangement">
+                <button data-arr="side-by-side">Side by side</button>
+                <button data-arr="switch">Switch halfway</button>
+              </div>
+            </div>
+          </div>
+
+          <div data-show="split-video split-image" class="stack">
+            <div class="row">
+              <span class="label">Clip size</span>
+              <input type="range" id="splitRatio" min="20" max="80" value="50" />
+              <output for="splitRatio"></output>
+            </div>
+            <label class="check"><input type="checkbox" id="swap" /> Clip on the bottom</label>
+          </div>
+
+          <div class="row">
+            <span class="label">Clip sound</span>
+            <input type="range" id="clipVolume" min="0" max="100" value="100" />
+            <output for="clipVolume"></output>
+          </div>
+          <p class="hint" id="panHint" hidden>Tip: drag inside the preview to reframe.</p>
+        </div>
+
+        <div class="step">
+          <h2><span class="n">3</span>Overlay <small>optional</small></h2>
+          <label class="drop" data-slot="overlay">
+            <input type="file" accept="image/*" hidden />
+            <span class="empty">Add an overlay <small>PNG, GIF…</small></span>
+            <span class="filled"><span class="name"></span><button type="button" class="x" title="Remove">✕</button></span>
+          </label>
+          <div class="overlay-controls" id="overlayControls">
+            <div class="pos" id="pos" aria-label="Quick position">
+              <button data-pos="tl" title="Top left"></button>
+              <button data-pos="tc" title="Top"></button>
+              <button data-pos="tr" title="Top right"></button>
+              <button data-pos="ml" title="Left"></button>
+              <button data-pos="mc" title="Center"></button>
+              <button data-pos="mr" title="Right"></button>
+              <button data-pos="bl" title="Bottom left"></button>
+              <button data-pos="bc" title="Bottom"></button>
+              <button data-pos="br" title="Bottom right"></button>
+            </div>
+            <div class="stack grow">
+              <div class="row">
+                <span class="label">Size</span>
+                <input type="range" id="ovScale" min="5" max="100" value="40" />
+                <output for="ovScale"></output>
+              </div>
+              <div class="row">
+                <span class="label">Opacity</span>
+                <input type="range" id="ovOpacity" min="5" max="100" value="100" />
+                <output for="ovOpacity"></output>
+              </div>
+              <p class="hint">Or drag it in the preview.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <h2><span class="n">4</span>Export</h2>
+          <div class="row">
+            <span class="label">Quality</span>
+            <div class="seg" id="quality">
+              <button data-q="draft">Draft</button>
+              <button data-q="standard">Standard</button>
+              <button data-q="high">High</button>
+            </div>
+          </div>
+          <button class="primary" id="exportBtn">Export video</button>
+          <div class="progress" id="progress" hidden>
+            <div class="bar"><div class="fill" id="progressFill"></div></div>
+            <div class="row between">
+              <span id="progressText">Starting…</span>
+              <button class="ghost" id="cancelBtn">Cancel</button>
+            </div>
+          </div>
+          <div class="result" id="result" hidden></div>
+          <p class="hint">Everything happens on your device. Nothing is uploaded.</p>
+        </div>
+      </section>
+
+      <section class="preview">
+        <div class="stage" id="stage">
+          <canvas id="canvas" width="540" height="960" aria-label="Preview"></canvas>
+          <div class="preview-msg" id="previewMsg" hidden></div>
+        </div>
+        <div class="transport">
+          <button class="play" id="playBtn" aria-label="Play">
+            <svg viewBox="0 0 24 24" class="i-play"><path d="M8 5v14l11-7z" /></svg>
+            <svg viewBox="0 0 24 24" class="i-pause"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
+          </button>
+          <span class="time" id="timeNow">0:00.0</span>
+          <div class="timeline" id="timeline">
+            <div class="tl-track"></div>
+            <div class="tl-range" id="tlRange"></div>
+            <div class="tl-handle" id="tlIn" title="Start"></div>
+            <div class="tl-handle" id="tlOut" title="End"></div>
+            <div class="tl-head" id="tlHead"></div>
+          </div>
+          <span class="time" id="timeTotal">0:00.0</span>
+        </div>
+        <div class="trim">
+          <button class="ghost" id="setIn" title="Set start at playhead (I)">Set start</button>
+          <span id="trimInfo">0:00.0 long</span>
+          <button class="ghost" id="setOut" title="Set end at playhead (O)">Set end</button>
+        </div>
+        <label class="check small center"><input type="checkbox" id="showSafe" checked /> Show safe zones</label>
+        <div class="warn" id="warn" hidden></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
